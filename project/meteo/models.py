@@ -33,8 +33,8 @@ class ConditionMeteoWilayas(models.Model):
         ('nuageux','nuageux'),
     
         ]
-    temperateur = models.IntegerField()
-    vitesse_vent = models.DecimalField(max_digits=2,decimal_places =2)
+    temp = models.IntegerField()
+    vent = models.DecimalField(max_digits=2,decimal_places =2)
     precepitation  = models.IntegerField()
     humidite = models.IntegerField()
     icon = models.CharField(choices=y,default='ensoleille')

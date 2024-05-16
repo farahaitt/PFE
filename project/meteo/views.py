@@ -10,127 +10,101 @@
 
 # # Create your views here.
 
-# class ReactViewSet(viewsets.ModelViewSet):
-#     queryset = React.objects.all()
-#     serializer_class = ReactSerializer
 
-# class ReactView(APIView):
-#     def get(self, request):
-#         output= [{"Lieu":output.Lieu,
-#             "Date":output.Date,
-#             "temp":output.Temp,
-#             "vent":output.vent,
-#             "precepitation":output.precepitation,
-#             "humidite":output.humidite}
-#             for output in React.objects.all()]
-#         return Response(output)
-    
-#     def post(self, request):
-#         serializer=ReactSerializer(data=request.data)
-#         if serializer.is_valid(raise_exception=True):
-#             serializer.save()
-#         return Response(serializer.data)
-
-
-from django.http import HttpResponse
-from django.shortcuts import render
+from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
+from .models import React
+from .serializers import ReactSerializer
+from rest_framework import status
 from rest_framework.parsers import JSONParser
 from django.http.response import JsonResponse
-from django.core.files.storage import default_storage
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework import status
-from rest_framework.generics import CreateAPIView
-from rest_framework.decorators import api_view
-from .models import React
-from .serializers import CreateReactSerializer, ReactSerializer
-from rest_framework import viewsets
 
+class ReactViewSet(viewsets.ModelViewSet):
+    queryset = React.objects.all()
+    serializer_class = ReactSerializer
 
-def ReactAPI(request):
-    if request.method == 'POST':
-        Lieu = request.POST.get('Lieu')
-        Date = request.POST.get('Date')
-        temp = request.POST.get('Température')
-        vent = request.POST.get('Vent')
-        precepitation = request.POST.get('Précipitation')
-        humidite = request.POST.get('Humidité')
-        icon = request.POST.get('Icon')
-
-        print("Received data:")
-        print("Lieu:", Lieu)
-        print("Date:", Date)
-        print("Température:", temp)
-        print("Vent:", vent)
-        print("Précipitation:", precepitation)
-        print("Humidité:", humidite)
-        print("Icon:", icon)
+class ReactView(APIView):
+    def get(self, request):
+        output= [{"Lieu":output.Lieu,
+            "Date":output.Date,
+            "temp":output.Temp,
+            "vent":output.vent,
+            "precepitation":output.precepitation,
+            "humidite":output.humidite}
+            for output in React.objects.all()]
+        return Response(output)
     
-    return HttpResponse("Data received successfully")
+    def post(self, request):
+        serializer=ReactSerializer(data=request.data)
+        if serializer.is_valid(raise_exception=True):
+            serializer.save()
+        return Response(serializer.data)
 
 
-# class mavue(APIView):
-#     def post(self,request):
-#         data=request.data
-#         print(data)
-#         serializer=ReactSerializer(data=data)
-#         if serializer.is_valid():
-#             serializer.serial.save()
-            
-#         return Response({"message":"L element est bien inseré ."},status=status.HTTP_201_CREATED)
-    
+
 
 @csrf_exempt
-def ReactAPI(request, pk=0):
-    if request.method =='GET':
+def react_api(request):
+    if request.method == 'GET':
         react = React.objects.all()
         react_serializer = ReactSerializer(react, many=True)
         return JsonResponse(react_serializer.data, safe=False)
     elif request.method == 'POST':
-        Lieu = request.POST.get('Lieu')
-        Date = request.POST.get('Date')
+        print(request.POST)
+        lieu = request.POST.get('Lieu')
+        print("lieu", lieu)
+        date = request.POST.get('Date')
         temp = request.POST.get('Température')
         vent = request.POST.get('vent')
-        precepitation = request.POST.get('Précipitation')
+        precipitation = request.POST.get('Précipitation')
         humidite = request.POST.get('Humidité')
         icon = request.POST.get('Icon')
 
         react_data = {
-        'Lieu': Lieu,
-        'Date': Date,
-        'Température': temp,
-        'Vent': vent,
-        'Précipitation': precepitation,
-        'Humidité': humidite,
-        'Icon': icon
-    }
+            'Lieu': lieu,
+            'Date': date,
+            'temp': temp,
+            'vent': vent,
+            'precepitation': precipitation,
+            'humidite': humidite,
+            'Icon': icon
+        }
 
-    # Initialize serializer with the data
         react_serializer = ReactSerializer(data=react_data)
 
-    # Check if serializer is valid
         if react_serializer.is_valid():
-        # Save the data
             react_serializer.save()
-            return JsonResponse("Adding successfully", safe=False)
-        return JsonResponse("Failed to add successfully", safe=False)
-    elif request.method =='Put':
+            return JsonResponse("Adding successfully", safe=False, status=status.HTTP_201_CREATED)
+        else:
+            print(react_serializer.errors)
+            return JsonResponse(react_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+@csrf_exempt
+def react_api_with_pk(request, pk=0):
+    if request.method == 'PUT':
         react_data = JSONParser().parse(request)
         print("meteo data")
         print(react_data)
         print("meteo ID")
         react = React.objects.get(id=react_data[id])
         print("meteo")
+        react_data = request.data
+        react = React.objects.get(id=pk)
         react_serializer = ReactSerializer(react, data=react_data)
         if react_serializer.is_valid():
             react_serializer.save()
             return JsonResponse("Updated Successfully", safe=False)
-        return JsonResponse("Failed to Update")
-    elif request.method =='DELETE':
-        react = React.objects.get(reactId=pk)
-        react.delete()
-        return JsonResponse("meteo was Deleted successfully", safe=False)
+        else:
+            print(react_serializer.errors)
+        return JsonResponse("Failed to Update", status=status.HTTP_400_BAD_REQUEST)
+    elif request.method == 'DELETE':
+        try:
+            react = React.objects.get(id=pk)
+            react.delete()
+            return JsonResponse("Meteo was deleted successfully", safe=False)
+        except React.DoesNotExist:
+            return JsonResponse("Meteo not found", status=status.HTTP_404_NOT_FOUND)
+
 
 
 # class ReactViewSet(viewsets.ModelViewSet):
